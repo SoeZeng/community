@@ -1,14 +1,17 @@
 package com.nowcoder.community.controller;
 
 import com.nowcoder.community.service.AlphaService;
+import com.nowcoder.community.util.CommunityUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.*;
@@ -147,4 +150,64 @@ public class AlphaController {
         return list;
 
     }
+
+    //cookie示例
+    //模拟浏览器访问服务器，第一次请求时服务器将cookie发送给浏览器
+    //浏览器再次访问服务器，请求头中包含cookie
+    @RequestMapping(path = "/cookie/set", method = RequestMethod.GET)
+    @ResponseBody
+    //创建完cookie后要将cookie存到response里，在响应的时候才能自动携带给浏览器
+    public String setCookie(HttpServletResponse response) {
+        //创建cookie
+        //Cookie没有无参构造器，必须传入参数，且参数类型都是字符串，一个cookie只能存一对key-value
+        Cookie cookie = new Cookie("code", CommunityUtil.generateUUID());
+        //设置cookie生效范围：声明在哪些路径上有效
+        cookie.setPath("/community/alpha"); //访问该路径及其子路径才有效
+        //设置cookie生存时间，默认存到内存重启后消失，设置生效时间后会存到硬盘中，超过时间才失效
+        cookie.setMaxAge(60*10);
+        //发送到响应头
+        response.addCookie(cookie);
+
+        return "set cookie";
+
+    }
+
+    @RequestMapping(path = "/cookie/get", method = RequestMethod.GET)
+    @ResponseBody
+    //将key为"code"的cookie赋给参数code
+    public String getCookie(@CookieValue("code") String code) {
+        System.out.println(code);
+        return "get cookie";
+    }
+
+    //session示例,session会通过cookie给浏览器传送一个session id
+    @RequestMapping(path = "/session/set",method = RequestMethod.GET)
+    @ResponseBody
+    //服务器/Spring MVC会自动创建session并注入
+    public String setSession(HttpSession session) {
+        session.setAttribute("id",1);
+        session.setAttribute("name","Test");
+        return "set session";
+
+    }
+
+    @RequestMapping(path = "/session/get",method = RequestMethod.GET)
+    @ResponseBody
+    //服务器/Spring MVC会自动创建session并注入
+    public String getSession(HttpSession session) {
+        System.out.println(session.getAttribute("id"));
+        System.out.println(session.getAttribute("name"));
+        return "get session";
+
+    }
+
+    // ajax示例
+    @RequestMapping(path = "/ajax", method = RequestMethod.POST)
+    @ResponseBody
+    public String testAjax(String name, int age) {
+        System.out.println(name);
+        System.out.println(age);
+        return CommunityUtil.getJSONString(0,"操作成功！");
+    }
+
 }
