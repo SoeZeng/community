@@ -48,11 +48,18 @@ public class HomeController {
         }
 
         // 这个就是将discussPosts这个List对象作为值存入到model中，然后将他命名成discussPosts，以后从model中取discussPosts这个对象就要通过键名discussPosts来取得
-        // 这个model就对被传送到界面，实现不同层级的数据传送
+        // 这个model就会被传送到界面，实现不同层级的数据传送
         model.addAttribute("discussPosts",discussPosts);
 
         // 返回的是模板的路径，也就是主页的路径,就是想要把model对象中存储的数据传给哪一个界面
         // 注意区分下面这个/index和上面那个/index。上面那个是在浏览器访问的时候写index就访问了这个controller，然后这个controller处理了数据后，return给了index.html这个模板，界面就给跳转到了index.html了，下面这个return写的是html模板的名字
         return "index";
     }
+
+    // 服务器/Controller发生异常，统一处理记了日志以后，需要返回出错的页面，那么就要手动地重定向回去
+    @RequestMapping(path = "/error", method = RequestMethod.GET)
+    public String getError() {
+        return "/error/500";
+    }
+
 }

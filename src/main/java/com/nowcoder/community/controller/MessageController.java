@@ -33,6 +33,7 @@ public class MessageController {
     // 私信列表
     @RequestMapping(path = "/letter/list", method = RequestMethod.GET)
     public String getLetterList(Model model, Page page) {
+//        Integer.valueOf("abc");
 
         User user = hostHolder.getUser();
 
@@ -126,9 +127,11 @@ public class MessageController {
         return ids;
     }
 
+    // 发送私信，异步请求
     @RequestMapping(path = "/letter/send",method = RequestMethod.POST)
     @ResponseBody
     public String sendLetter(String toName,String content) {
+//        Integer.parseInt("abc");
         User target = userService.findUserByName(toName);
         if(target == null) {
             return CommunityUtil.getJSONString(1,"目标用户不存在！");
