@@ -12,7 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
-import org.thymeleaf.Thymeleaf;
 import org.thymeleaf.context.Context;
 
 import java.util.Date;
@@ -202,6 +201,10 @@ public class UserService implements CommunityConstant {
         newPassword = CommunityUtil.MD5(newPassword + user.getSalt());
         map.put("updateCompleted",userMapper.updatePassword(userId,newPassword));
         return map;
+    }
+
+    public User findUserByName(String name) {
+        return userMapper.selectByName(name);
     }
 
 }
