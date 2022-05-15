@@ -4,11 +4,14 @@ import com.google.code.kaptcha.Producer;
 import com.nowcoder.community.entity.User;
 import com.nowcoder.community.service.UserService;
 import com.nowcoder.community.util.CommunityConstant;
+import com.nowcoder.community.util.CommunityUtil;
+import com.nowcoder.community.util.RedisKeyUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.CookieValue;
@@ -26,6 +29,7 @@ import javax.servlet.http.HttpSession;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 
 @Controller
@@ -39,8 +43,12 @@ public class LoginController implements CommunityConstant {
     @Autowired
     private Producer kaptchaProducer;
 
+    @Autowired
+    private RedisTemplate redisTemplate;
+
     @Value("${server.servlet.context-path}")
     private String contextPath;
+
 
     @RequestMapping(path = "/register",method = RequestMethod.GET)
     public String getRegisterPage() {
@@ -95,13 +103,24 @@ public class LoginController implements CommunityConstant {
     // 生成验证码之后，服务端需要保存，当浏览器再次访问服务器时确认验证码是否正确，
     // 该验证码不能存在浏览器端，容易被盗取
     // 第一次请求时生成，登录时再使用 -> session
-    public void getKaptcha(HttpServletResponse response, HttpSession session) {
+    public void getKaptcha(HttpServletResponse response/*, HttpSession session*/) {
         // 生成验证码
         String text = kaptchaProducer.createText();
         BufferedImage image = kaptchaProducer.createImage(text);
 
         // 将验证码存入session
-        session.setAttribute("kaptcha",text);
+        // session.setAttribute("kaptcha",text);
+
+        // 验证码的归属
+        String kaptchaOwner = CommunityUtil.generateUUID();
+        Cookie cookie = new Cookie("kaptchaOwner", kaptchaOwner);
+        cookie.setMaxAge(60); // 生存时间
+        cookie.setPath(contextPath); // 生效范围
+        response.addCookie(cookie);
+
+        // 将验证码存入Redis
+        String kaptchaKey = RedisKeyUtil.getKaptchaKey(kaptchaOwner);
+        redisTemplate.opsForValue().set(kaptchaKey, text, 60, TimeUnit.SECONDS);
 
         // 将图片输出给浏览器
         response.setContentType("image/png");
@@ -119,9 +138,15 @@ public class LoginController implements CommunityConstant {
     // 如果某个参数是一个实体(Bean)，Spring MVC会自动将其注入Model，页面就可以直接获得该实体类对象的数据；
     // 但如果是基本数据类型，不会将其注入Model，则可以 -> ①手动注入Model ②这些参数是存在于Request对象中的，可通过Request.getParameter得到
     public String login(String username, String password, String code, boolean rememberme,
-                        Model model, HttpSession session, HttpServletResponse response) {
+                        Model model,/* HttpSession session,*/ HttpServletResponse response,
+                        @CookieValue("kaptchaOwner") String kaptchaOwner) {
         // 检查验证码
-        String kaptcha = (String) session.getAttribute("kaptcha");
+        // String kaptcha = (String) session.getAttribute("kaptcha");
+        String kaptcha = null;
+        if(StringUtils.isNotBlank(kaptchaOwner)) {
+            String kaptchaKey = RedisKeyUtil.getKaptchaKey(kaptchaOwner);
+            kaptcha = (String) redisTemplate.opsForValue().get(kaptchaKey);
+        }
 
         if(StringUtils.isBlank(kaptcha) || !kaptcha.equalsIgnoreCase(code)) {
             model.addAttribute("codeMsg","验证码不正确！");
