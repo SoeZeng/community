@@ -28,6 +28,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -159,8 +160,8 @@ public class LoginController implements CommunityConstant {
         if(map.containsKey("ticket")) {
             // 将ticket发送给客户端
             Cookie cookie = new Cookie("ticket",map.get("ticket").toString());
-            cookie.setPath(contextPath);
-            cookie.setMaxAge(expiredSeconds);
+            cookie.setPath(contextPath); // cookie的有效路径
+            cookie.setMaxAge(expiredSeconds); // cookie的有效时间
             response.addCookie(cookie);
 
             // 重定向到首页
@@ -174,6 +175,7 @@ public class LoginController implements CommunityConstant {
 
     @RequestMapping(path = "/logout", method = RequestMethod.GET)
     public String logout(@CookieValue("ticket") String ticket) {
+
         userService.logout(ticket);
         return "redirect:/login";
     }
