@@ -58,7 +58,7 @@ public class LoginController implements CommunityConstant {
     }
 
     // 给浏览器返回一个html，html中会包含一个图片的路径，
-    // 浏览器会根据这个路径再次访问服务器获取图片，所以需要在单独写一个请求向浏览器返回图片，
+    // 浏览器会根据这个路径再次访问服务器获取图片，所以需要再单独写一个请求向浏览器返回图片，
     // 这个请求会在"/site/login"模板中引用它的路径
     @RequestMapping(path = "/login",method = RequestMethod.GET)
     public String getLoginPage() {
